@@ -33,6 +33,5 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-        // testing if it works!
     }
 }
