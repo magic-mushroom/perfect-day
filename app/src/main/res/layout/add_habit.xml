@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <Spinner
+        android:id="@+id/add_category"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dip"
+        android:spinnerMode="dialog"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"/>
+
+    <EditText
+        android:id="@+id/add_habit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dip"
+        android:layout_marginRight="20dp"
+        android:hint="@string/add_habit"
+        android:paddingBottom="20dip"
+        android:layout_below="@id/add_category"
+        android:layout_alignLeft="@id/add_category"/>
+
+    <RelativeLayout
+        android:id="@+id/togglebutton_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:layout_below="@id/add_habit">
+
+        <ToggleButton
+            android:id="@+id/button_monday"
+            android:layout_width="@dimen/toggle_button_dia"
+            android:layout_height="@dimen/toggle_button_dia"
+            android:layout_alignParentLeft="true"
+            android:background="@drawable/toggle_selector"
+            android:textColor="@color/toggle_stroke"
+            android:textOff="@string/mon"
+            android:textOn="@string/mon"/>
+
+        <ToggleButton
+            android:id="@+id/button_tuesday"
+            android:layout_width="@dimen/toggle_button_dia"
+            android:layout_height="@dimen/toggle_button_dia"
+            android:layout_toRightOf="@id/button_monday"
+            android:layout_alignBottom="@id/button_monday"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/toggle_selector"
+            android:textColor="@color/toggle_stroke"
+            android:textOff="@string/tue"
+            android:textOn="@string/tue"/>
+
+        <ToggleButton
+            android:id="@+id/button_wednesday"
+            android:layout_width="@dimen/toggle_button_dia"
+            android:layout_height="@dimen/toggle_button_dia"
+            android:layout_toRightOf="@id/button_tuesday"
+            android:layout_alignBottom="@id/button_tuesday"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/toggle_selector"
+            android:textColor="@color/toggle_stroke"
+            android:textOff="@string/wed"
+            android:textOn="@string/wed"/>
+
+        <ToggleButton
+            android:id="@+id/button_thursday"
+            android:layout_width="@dimen/toggle_button_dia"
+            android:layout_height="@dimen/toggle_button_dia"
+            android:layout_toRightOf="@id/button_wednesday"
+            android:layout_alignBottom="@id/button_wednesday"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/toggle_selector"
+            android:textColor="@color/toggle_stroke"
+            android:textOff="@string/thu"
+            android:textOn="@string/thu"/>
+
+        <ToggleButton
+            android:id="@+id/button_friday"
+            android:layout_width="@dimen/toggle_button_dia"
+            android:layout_height="@dimen/toggle_button_dia"
+            android:layout_below="@id/button_monday"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="@dimen/toggle_button_radius"
+            android:background="@drawable/toggle_selector"
+            android:textColor="@color/toggle_stroke"
+            android:textOff="@string/fri"
+            android:textOn="@string/fri"/>
+
+        <ToggleButton
+            android:id="@+id/button_saturday"
+            android:layout_width="@dimen/toggle_button_dia"
+            android:layout_height="@dimen/toggle_button_dia"
+            android:layout_toRightOf="@id/button_friday"
+            android:layout_alignBottom="@id/button_friday"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/toggle_selector"
+            android:textColor="@color/toggle_stroke"
+            android:textOff="@string/sat"
+            android:textOn="@string/sat"/>
+
+        <ToggleButton
+            android:id="@+id/button_sunday"
+            android:layout_width="@dimen/toggle_button_dia"
+            android:layout_height="@dimen/toggle_button_dia"
+            android:layout_toRightOf="@id/button_saturday"
+            android:layout_alignBottom="@id/button_saturday"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/toggle_selector"
+            android:textColor="@color/toggle_stroke"
+            android:textOff="@string/sun"
+            android:textOn="@string/sun"/>
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/add_time_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/togglebutton_layout"
+        android:layout_marginTop="30dp"
+        android:layout_centerHorizontal="true"
+        android:text="@string/remind_me"
+        android:textSize="20sp"/>
+
+    <TextView
+        android:id="@+id/add_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/add_time_text"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="40dp"
+        android:layout_centerHorizontal="true"
+        android:textSize="40sp"/>
+
+    <TextView
+        android:id="@+id/add_error"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/add_button"
+        android:layout_marginBottom="10dp"
+        android:layout_centerHorizontal="true"
+        android:textSize="15dp"
+        android:textColor="@color/error"/>
+
+    <Button
+        android:id="@id/add_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/add_time"
+        android:textSize="25dp"/>
+
+
+</RelativeLayout>
