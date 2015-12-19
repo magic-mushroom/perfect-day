@@ -11,9 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 
-/**
- * Created by Raks on 12/3/2015.
- */
 public class HomeAdapter extends BaseAdapter {
 
     private ArrayList<HabitHome> myHabits;

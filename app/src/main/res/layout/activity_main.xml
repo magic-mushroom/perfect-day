@@ -18,14 +18,12 @@
         android:layout_height="wrap_content"
         android:text="New Task"/>
 
-    <ListView
+    <android.support.v7.widget.RecyclerView
         android:id="@+id/home_habits"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_below="@id/sample_button"
-        android:layout_marginTop="20dp"
-        android:divider="@null"
-        android:dividerHeight="@dimen/listview_divider"/>
+        android:layout_marginTop="20dp"/>
 
 </LinearLayout>

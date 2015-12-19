@@ -5,8 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -27,15 +33,20 @@ import java.util.List;
 public class MainActivity extends Activity {
 
     Button btn;
-    ListView homeHabits;
+//    ListView homeHabits;
     ArrayList<HabitHome> myHabits = new ArrayList<HabitHome>();
     String nameHome, categoryHome, dayOfWeekHome, alarmHomeString;
     Calendar alarmHome;
     int idHome, dayOfWeek;
 //    String[] daysHome;
-    HomeAdapter myAdapter;
+//    HomeAdapter myAdapter;
     Context context;
 //    SwipeDetector swipeDetector;
+
+    // Trying out RecyclerView
+    RecyclerView homeHabits;
+    NewHomeAdapter myAdapter;
+    RecyclerView.LayoutManager myLayoutManager;
 
     public View.OnTouchListener gestureListener;
 
@@ -61,7 +72,7 @@ public class MainActivity extends Activity {
         });
 
         // Showing the day's habits
-        homeHabits = (ListView) findViewById(R.id.home_habits);
+        homeHabits = (RecyclerView) findViewById(R.id.home_habits);
         Calendar now = Calendar.getInstance();
         dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
 
@@ -180,20 +191,85 @@ public class MainActivity extends Activity {
 
             else {
 
-                myAdapter = new HomeAdapter(context, myHabits);
+                myLayoutManager = new LinearLayoutManager(context);
+                homeHabits.setLayoutManager(myLayoutManager);
+
+                myAdapter = new NewHomeAdapter(myHabits);
                 homeHabits.setAdapter(myAdapter);
                 myAdapter.notifyDataSetChanged();
 
-                homeHabits.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+
                     @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                        //Remove swiped item from list and notify the RecyclerView
+                        myHabits.remove(viewHolder.getAdapterPosition());
+                        homeHabits.getAdapter().notifyItemRemoved(viewHolder.getAdapterPosition());
 
-                        Toast.makeText(MainActivity.this, "Clicked on " + position, Toast.LENGTH_SHORT)
-                                .show();
-
+                        // remove from DB as well or show
 
                     }
+
+                    @Override
+                    public boolean onMove(RecyclerView recyclerView,
+                                       RecyclerView.ViewHolder viewHolder, RecyclerView
+                                               .ViewHolder target){
+                        return false;
+                    }
+
+                    @Override
+                    public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView
+                            .ViewHolder viewHolder, float dX, float dY, int actionState, boolean
+                                                    isCurrentlyActive){
+                        if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                            // Get RecyclerView item from the ViewHolder
+                            View itemView = viewHolder.itemView;
+
+                            Paint p = new Paint();
+                            if (dX > 0) {
+
+                                // Set green color for L2R swipe
+                                p.setARGB(255,85,139,47);
+                                // Draw Rect with varying right side, equal to displacement dX
+                                c.drawRect((float) itemView.getLeft(), (float) itemView.getTop(), dX,
+                                        (float) itemView.getBottom(), p);
+                            } else {
+
+                                // Set yellow color for R2L swipe
+                                p.setARGB(255, 255, 235, 59);
+                                // Draw Rect with varying left side, equal to the item's right side plus negative displacement dX
+                                c.drawRect((float) itemView.getRight() + dX, (float) itemView.getTop(),
+                                        (float) itemView.getRight(), (float) itemView.getBottom(), p);
+                            }
+
+                            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+                        }
+                    }
+
+                };
+
+                ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
+
+                itemTouchHelper.attachToRecyclerView(homeHabits);
+
+                myAdapter.setOnItemClickListener(new NewHomeAdapter.ClickListener(){
+
+                    @Override
+                    public void onItemClick(int position, View v) {
+                        Log.d("ItemOnClick", "onItemClick position: " + position);
+                    }
                 });
+
+//                homeHabits.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                    @Override
+//                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//
+//                        Toast.makeText(MainActivity.this, "Clicked on " + position, Toast.LENGTH_SHORT)
+//                                .show();
+//
+//
+//                    }
+//                });
 
 //                homeHabits.setOnTouchListener(swipeDetector);
 
