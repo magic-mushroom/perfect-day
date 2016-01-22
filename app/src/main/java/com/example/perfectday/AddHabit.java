@@ -10,6 +10,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,7 +27,7 @@ import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-public class AddHabit extends Activity {
+public class AddHabit extends AppCompatActivity {
 
     Spinner category;
     String category_value;
@@ -46,6 +47,7 @@ public class AddHabit extends Activity {
         setContentView(R.layout.add_habit);
 
         getActionBar().setDisplayHomeAsUpEnabled(true);
+
 
         category = (Spinner) findViewById(R.id.add_category);
 

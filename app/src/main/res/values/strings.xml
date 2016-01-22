@@ -11,6 +11,8 @@
     <string name="error_noday">Oops, please select at least 1 day</string>
     <string name="error_nohabit">Okay, you forgot to write what the habit is!</string>
 
+    <string name="habit_done">Sure you want to mark this as done?</string>
+
     <!--  Category dropdown choices -->
     <string-array name="categories">
         <item>Music</item>

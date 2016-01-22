@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <color name="colorPrimary">#A909CD</color>
+    <color name="colorPrimaryDark">#7710D1</color>
+    <color name="colorAccent">#EB3949</color>
+
     <color name="toggle_stroke">#3F51B5</color>
     <color name="toggle_on">#9FA8DA</color>
     <color name="toggle_off">#FFFFFF</color>
 
     <color name="error">#CD4447</color>
+
+
 
 </resources>

@@ -1,7 +1,9 @@
 package com.example.perfectday;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -9,6 +11,8 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -24,24 +28,21 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     Button btn;
-//    ListView homeHabits;
     ArrayList<HabitHome> myHabits = new ArrayList<HabitHome>();
     String nameHome, categoryHome, dayOfWeekHome, alarmHomeString;
     Calendar alarmHome;
     int idHome, dayOfWeek;
-//    String[] daysHome;
-//    HomeAdapter myAdapter;
     Context context;
-//    SwipeDetector swipeDetector;
 
     // Trying out RecyclerView
     RecyclerView homeHabits;
@@ -112,6 +113,13 @@ public class MainActivity extends Activity {
                 dayOfWeekHome = "SA";
                 break;
         }
+
+        // Setting adapter for RecyclerView
+        myLayoutManager = new LinearLayoutManager(context);
+        homeHabits.setLayoutManager(myLayoutManager);
+
+        myAdapter = new NewHomeAdapter(myHabits);
+        homeHabits.setAdapter(myAdapter);
 
         // Clearing the Habit list and pulling data from DB
         myHabits.clear();
@@ -191,22 +199,49 @@ public class MainActivity extends Activity {
 
             else {
 
-                myLayoutManager = new LinearLayoutManager(context);
-                homeHabits.setLayoutManager(myLayoutManager);
-
-                myAdapter = new NewHomeAdapter(myHabits);
-                homeHabits.setAdapter(myAdapter);
                 myAdapter.notifyDataSetChanged();
 
                 ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
 
                     @Override
                     public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
-                        //Remove swiped item from list and notify the RecyclerView
+
+                        // Left to Right Swipe
+                        if (swipeDir == 8) {
+
+                            HabitHome swipedHabit = myHabits.get(viewHolder.getAdapterPosition());
+                            int adapterPosition = viewHolder.getAdapterPosition();
+                            markAsDone(swipedHabit, adapterPosition);
+                        }
+                        else {
+                            // show Date/Time Picker
+                            new AlertDialog.Builder(MainActivity.this)
+                                    .setMessage(R.string.habit_done)
+                                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+
+
+                                        }
+                                    })
+                                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            dialog.cancel();
+
+                                        }
+                                    })
+                                    .show();
+
+                        }
+
                         myHabits.remove(viewHolder.getAdapterPosition());
                         homeHabits.getAdapter().notifyItemRemoved(viewHolder.getAdapterPosition());
 
                         // remove from DB as well or show
+                        Log.d("Swipe Direction", String.valueOf(swipeDir));
 
                     }
 
@@ -259,24 +294,32 @@ public class MainActivity extends Activity {
                         Log.d("ItemOnClick", "onItemClick position: " + position);
                     }
                 });
-
-//                homeHabits.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//                    @Override
-//                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//
-//                        Toast.makeText(MainActivity.this, "Clicked on " + position, Toast.LENGTH_SHORT)
-//                                .show();
-//
-//
-//                    }
-//                });
-
-//                homeHabits.setOnTouchListener(swipeDetector);
-
-
             }
 
         }
+    }
+
+    // Swiped Left to Right
+    public void markAsDone(HabitHome swipedHabit, int adapterPosition){
+
+        // Update DB to mark it as Done
+        Snackbar sbDone = Snackbar.make(homeHabits, "Marked as Done", Snackbar.LENGTH_LONG);
+        sbDone.show();
+
+    }
+
+    // Swiped Right to Left
+    public void markAsSkipped() {
+
+        // Updated DB, RecyclerView
+        myAdapter.notifyDataSetChanged();
+
+    }
+
+    // Remove item from list and notify the RecyclerView
+    public void someMethod(RecyclerView.ViewHolder viewHolder){
+        myHabits.remove(viewHolder.getAdapterPosition());
+        homeHabits.getAdapter().notifyItemRemoved(viewHolder.getAdapterPosition());
     }
 
 
