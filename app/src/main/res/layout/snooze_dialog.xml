@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <RadioGroup
+        android:id="@+id/radio_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/radio_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="In"
+            android:textSize="20sp"/>
+
+        <RadioButton
+            android:id="@+id/radio_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tomorrow"
+            android:textSize="20sp"
+            android:layout_marginTop="10dp"/>
+
+        <RadioButton
+            android:id="@+id/radio_3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Skip today"
+            android:textSize="20sp"
+            android:layout_marginTop="10dp"/>
+
+    </RadioGroup>
+
+    <EditText
+        android:id="@+id/radio_edittext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/radio_group"
+        android:layout_toRightOf="@id/radio_group"
+        android:text="1"
+        android:textSize="20sp"
+        android:layout_marginLeft="-70dp"
+        android:layout_marginTop="-8dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/radio_edittext"
+        android:layout_toRightOf="@id/radio_edittext"
+        android:text="hours"
+        android:textSize="20sp"
+        android:layout_marginTop="8dp"
+        android:layout_marginLeft="5dp"/>
+
+</RelativeLayout>
+

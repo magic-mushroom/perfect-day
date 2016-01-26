@@ -46,8 +46,7 @@ public class AddHabit extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.add_habit);
 
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         category = (Spinner) findViewById(R.id.add_category);
 

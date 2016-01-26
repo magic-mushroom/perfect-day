@@ -17,6 +17,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -49,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     NewHomeAdapter myAdapter;
     RecyclerView.LayoutManager myLayoutManager;
 
+    boolean doneUndo, skipUndo;
+
     public View.OnTouchListener gestureListener;
 
 
@@ -56,8 +59,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-//        daysHome = new String[7];
 
         context = this;
 
@@ -206,36 +207,17 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
 
-                        // Left to Right Swipe
+                        HabitHome swipedHabit = myHabits.get(viewHolder.getAdapterPosition());
+                        int adapterPosition = viewHolder.getAdapterPosition();
+
                         if (swipeDir == 8) {
-
-                            HabitHome swipedHabit = myHabits.get(viewHolder.getAdapterPosition());
-                            int adapterPosition = viewHolder.getAdapterPosition();
+                            // Left to Right Swipe
                             markAsDone(swipedHabit, adapterPosition);
+                        } else {
+                            // Right to Left Swipe
+                            markAsSkipped(swipedHabit, adapterPosition);
                         }
-                        else {
-                            // show Date/Time Picker
-                            new AlertDialog.Builder(MainActivity.this)
-                                    .setMessage(R.string.habit_done)
-                                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
 
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-
-
-                                        }
-                                    })
-                                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            dialog.cancel();
-
-                                        }
-                                    })
-                                    .show();
-
-                        }
 
                         myHabits.remove(viewHolder.getAdapterPosition());
                         homeHabits.getAdapter().notifyItemRemoved(viewHolder.getAdapterPosition());
@@ -300,27 +282,59 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Swiped Left to Right
-    public void markAsDone(HabitHome swipedHabit, int adapterPosition){
+    public void markAsDone(final HabitHome swipedHabit, final int adapterPosition){
 
         // Update DB to mark it as Done
-        Snackbar sbDone = Snackbar.make(homeHabits, "Marked as Done", Snackbar.LENGTH_LONG);
-        sbDone.show();
+        showSnackBar("Done", swipedHabit, adapterPosition);
 
     }
 
     // Swiped Right to Left
-    public void markAsSkipped() {
+    public void markAsSkipped(final HabitHome swipedHabit, final int adapterPosition) {
 
-        // Updated DB, RecyclerView
-        myAdapter.notifyDataSetChanged();
+        // show snooze options
+        AlertDialog.Builder skipAlertBuilder = new AlertDialog.Builder(this);
+        LayoutInflater layoutInflater = this.getLayoutInflater();
+
+        skipAlertBuilder.setTitle("Remind me...");
+        skipAlertBuilder.setView(layoutInflater.inflate(R.layout.snooze_dialog, null))
+                .setPositiveButton("OKAY", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // something
+                        showSnackBar("Snooze", swipedHabit, adapterPosition);
+                    }
+                })
+                .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        myHabits.add(adapterPosition, swipedHabit);
+                        myAdapter.notifyDataSetChanged();
+                    }
+                });
+
+
+        AlertDialog skipAlert = skipAlertBuilder.create();
+        skipAlert.show();
 
     }
 
-    // Remove item from list and notify the RecyclerView
-    public void someMethod(RecyclerView.ViewHolder viewHolder){
-        myHabits.remove(viewHolder.getAdapterPosition());
-        homeHabits.getAdapter().notifyItemRemoved(viewHolder.getAdapterPosition());
-    }
 
+
+    public void showSnackBar(String action, final HabitHome swipedHabit, final int adapterPosition){
+
+        Snackbar sbDone = Snackbar.make(homeHabits, "Snoozed", Snackbar.LENGTH_LONG)
+                .setAction("UNDO", new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View v) {
+                        myHabits.add(adapterPosition, swipedHabit);
+                        myAdapter.notifyDataSetChanged();
+
+                    }
+                });
+        sbDone.show();
+
+    }
 
 }
