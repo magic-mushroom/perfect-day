@@ -29,7 +29,7 @@ public class HabitDatabase extends SQLiteOpenHelper {
             db.beginTransaction();
 
             db.execSQL("CREATE TABLE HABITS (ID INTEGER PRIMARY KEY AUTOINCREMENT, TITLE, " +
-                    "CATEGORY, SCHEDULE, ALARMTIME, THISALARM, NEXTALARM, STREAK, TOTAL, M, T, W," +
+                    "CATEGORY, SCHEDULE, ALARMTIME, NEXTALARM, STREAK, TOTAL, M, T, W," +
                     " TH, F, SA, SU);");
 
             db.setTransactionSuccessful();

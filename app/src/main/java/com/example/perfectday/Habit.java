@@ -8,13 +8,12 @@ public class Habit {
 
     private String name, category;
     private int schedule, currentStreak, totalDone;
-    private Calendar thisAlarm, nextAlarm, alarmTime;
+    private Calendar nextAlarm, alarmTime;
     private String[] days;
     private int id;
 
     // Constructor
-    public Habit(int id, String name, String category, int schedule, Calendar alarmTime, Calendar
-            thisAlarm,
+    public Habit(int id, String name, String category, int schedule, Calendar alarmTime,
                  Calendar nextAlarm, int currentStreak, int totalDone, String[] days) {
 
         this.id = id;
@@ -22,7 +21,6 @@ public class Habit {
         this.category = category;
         this.schedule = schedule;
         this.alarmTime = alarmTime;
-        this.thisAlarm = thisAlarm;
         this.nextAlarm = nextAlarm;
         this.currentStreak = currentStreak;
         this.totalDone = totalDone;
@@ -61,14 +59,6 @@ public class Habit {
 
     public void setAlarmTime(Calendar alarmTime) {
         this.alarmTime = alarmTime;
-    }
-
-    public Calendar getThisAlarm() {
-        return thisAlarm;
-    }
-
-    public void setThisAlarm(Calendar thisAlarm) {
-        this.thisAlarm = thisAlarm;
     }
 
     public Calendar getNextAlarm() {

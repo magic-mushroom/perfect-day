@@ -9,14 +9,15 @@ public class HabitHome {
 
     private Calendar alarmTime;
     private String name, category;
-    private int id;
+    private int id, schedule;
 
-    public HabitHome (int id, String name, String category, Calendar alarmTime) {
+    public HabitHome (int id, String name, String category, int schedule, Calendar alarmTime) {
 
         this.name = name;
         this.category = category;
         this.alarmTime = alarmTime;
         this.id = id;
+        this.schedule = schedule;
 
     }
 
@@ -30,6 +31,10 @@ public class HabitHome {
 
     public Calendar getHomeAlarmTime() {
         return alarmTime;
+    }
+
+    public int getSchedule() {
+        return schedule;
     }
 
     public int getHomeId() {

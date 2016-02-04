@@ -33,13 +33,15 @@ public class AddHabit extends AppCompatActivity {
     String category_value;
     TextView alarmTime, addError;
     SimpleDateFormat sdf = new SimpleDateFormat("hh:mm aa");
-    Calendar cal;
+    Calendar cal, calAlarm;
     ToggleButton mon, tue, wed, thu, fri, sat, sun;
     Button addButton;
     EditText addHabit;
-    int schedule, seq, id;
+    int schedule, id;
     String[] addDays;
     Habit newHabit;
+
+    int dayOfWeekAdd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,7 +197,7 @@ public class AddHabit extends AppCompatActivity {
 
 
                     newHabit = new Habit(0, addHabit.getText().toString(), category_value, schedule,
-                            cal, cal, cal, 0, 0, addDays);
+                            cal, cal, 0, 0, addDays);
 
                     Log.d("AddHabit_dbInsert", cal.toString());
 
@@ -272,9 +274,88 @@ public class AddHabit extends AppCompatActivity {
 
     public void setAlarm() {
 
-        // Set alarms later
+        // Set alarm times
+        Calendar now = Calendar.getInstance();
+        dayOfWeekAdd = now.get(Calendar.DAY_OF_WEEK);
+
+        int dayOfWeekAddBinary = 0;
+
+        int i = 0;
+
+        // 1 = Sun, 2 = Mon
+        // schedule = MTWTFSS
+
+        while ((dayOfWeekAddBinary & schedule) == 0) {
+
+            calAlarm = cal;
+            calAlarm.add(Calendar.DAY_OF_YEAR, i);
+
+            switch (dayOfWeekAdd) {
+
+                case 1:
+                    dayOfWeekAddBinary = 1;
+                    dayOfWeekAdd = 2;
+                    break;
+
+                case 2:
+                    dayOfWeekAddBinary = 64;
+                    dayOfWeekAdd = 3;
+                    break;
+
+                case 3:
+                    dayOfWeekAddBinary = 32;
+                    dayOfWeekAdd = 4;
+                    break;
+
+                case 4:
+                    dayOfWeekAddBinary = 16;
+                    dayOfWeekAdd = 5;
+                    break;
+
+                case 5:
+                    dayOfWeekAddBinary = 8;
+                    dayOfWeekAdd = 6;
+                    break;
+
+                case 6:
+                    dayOfWeekAddBinary = 4;
+                    dayOfWeekAdd = 7;
+                    break;
+
+                case 7:
+                    dayOfWeekAddBinary = 2;
+                    dayOfWeekAdd = 1;
+                    break;
+
+            }
+
+            i++;
+
+        }
+
+
+//        Log.d("bitwise_test", String.valueOf(dayOfWeekAddBinary));
+//
+//        calThisAlarm = cal;
+//
+//        while ((dayOfWeekAddBinary & schedule) == 0){
+//
+//            calThisAlarm.add(Calendar.DAY_OF_YEAR, 1);
+//
+//            dayOfWeekAddBinary = dayOfWeekAddBinary >> 1;
+//
+//            Log.d("bitwise_test", String.valueOf(dayOfWeekAddBinary));
+//
+//        }
+
+        // Only for Debug
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
+        Log.d("bitwise_test", dateFormat.format(calAlarm.getTime()));
+
 
         // Save to DB
+
+        newHabit.setNextAlarm(calAlarm);
 
         new GetLatestGoalId().execute();
 
@@ -313,12 +394,10 @@ public class AddHabit extends AppCompatActivity {
             // Putting Calendar dates
             SimpleDateFormat dateFormatDB = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
             String dbTime = dateFormatDB.format(habitToAdd[0].getAlarmTime().getTime());
-            String dbThisAlarm = dateFormatDB.format(habitToAdd[0].getThisAlarm().getTime());
             String dbNextAlarm = dateFormatDB.format(habitToAdd[0].getNextAlarm().getTime());
 
 
-            cv.put("ALARMTIME", dbTime );
-            cv.put("THISALARM", dbThisAlarm);
+            cv.put("ALARMTIME", dbTime);
             cv.put("NEXTALARM", dbNextAlarm);
 
             db.insert("HABITS", null, cv);

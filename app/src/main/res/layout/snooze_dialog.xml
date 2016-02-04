@@ -2,7 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="20dp">
 
     <RadioGroup
         android:id="@+id/radio_group"
@@ -15,7 +16,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="In"
-            android:textSize="20sp"/>
+            android:textSize="20sp"
+            android:checked="true"/>
 
         <RadioButton
             android:id="@+id/radio_2"
@@ -53,7 +55,7 @@
         android:layout_toRightOf="@id/radio_edittext"
         android:text="hours"
         android:textSize="20sp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="10dp"
         android:layout_marginLeft="5dp"/>
 
 </RelativeLayout>

@@ -2,13 +2,16 @@ package com.example.perfectday;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -25,24 +28,32 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
+
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     Button btn;
-    ArrayList<HabitHome> myHabits = new ArrayList<HabitHome>();
+    ArrayList<HabitHome> myHabits = new ArrayList<>();
     String nameHome, categoryHome, dayOfWeekHome, alarmHomeString;
     Calendar alarmHome;
-    int idHome, dayOfWeek;
+    int idHome, dayOfWeek, dayOfWeekBinary, nextDayOfWeekBinary, scheduleHome;
     Context context;
 
     // Trying out RecyclerView
@@ -50,9 +61,16 @@ public class MainActivity extends AppCompatActivity {
     NewHomeAdapter myAdapter;
     RecyclerView.LayoutManager myLayoutManager;
 
-    boolean doneUndo, skipUndo;
+    RadioGroup snoozeRadioGroup;
+    EditText snoozeHours;
+    String snoozeHoursText;
 
-    public View.OnTouchListener gestureListener;
+    // Sharedpreferences to save day start-end time
+    SharedPreferences sharedPref;
+    Calendar dayEndTime;
+    int dayEndTimeInt;
+
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
 
 
     @Override
@@ -62,7 +80,49 @@ public class MainActivity extends AppCompatActivity {
 
         context = this;
 
-        btn = (Button)findViewById(R.id.sample_button);
+
+        // Showing toasts passed as intent extras
+        String toastie = getIntent().getStringExtra("toast");
+        if (toastie!=null){
+            Toast toast = Toast.makeText(this, toastie, Toast.LENGTH_SHORT);
+            toast.show();
+        }
+
+
+        // Setting sharedpreferences for first time
+        sharedPref = this.getSharedPreferences("settings", Context.MODE_PRIVATE);
+        if (!sharedPref.contains("notif_yes")) {
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+
+            editor.putBoolean("notif_yes", true);
+
+            Calendar now = Calendar.getInstance();
+            now.set(Calendar.HOUR_OF_DAY, 3);
+            now.set(Calendar.MINUTE, 0);
+            editor.putString("end_time", sdf.format(now.getTime()));
+
+            editor.commit();
+
+        }
+
+        // Reading end_time
+        String dayEndTimeStr = sharedPref.getString("end_time", "null");
+        dayEndTime = Calendar.getInstance();
+        try {
+            dayEndTime.setTime(sdf.parse(dayEndTimeStr));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        dayEndTimeInt = dayEndTime.get(Calendar.HOUR_OF_DAY)*60 + dayEndTime.get(Calendar.MINUTE);
+
+
+        // Button for adding new task
+        btn = (Button) findViewById(R.id.sample_button);
+
+//       snoozeRadioGroup = (RadioGroup) findViewById(R.id.radio_group);
+//        snoozeHours = (EditText) findViewById(R.id.radio_edittext);
 
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -73,47 +133,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
         // Showing the day's habits
         homeHabits = (RecyclerView) findViewById(R.id.home_habits);
-        Calendar now = Calendar.getInstance();
-        dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
 
-        switch (dayOfWeek) {
-            case (1):
-                //Sunday
-                dayOfWeekHome = "SU";
-                break;
-
-            case (2):
-                //Monday
-                dayOfWeekHome = "M";
-                break;
-
-            case (3):
-                //Tuesday
-                dayOfWeekHome = "T";
-                break;
-
-            case (4):
-                //Wednesday
-                dayOfWeekHome = "W";
-                break;
-
-            case (5):
-                //Thursday
-                dayOfWeekHome = "TH";
-                break;
-
-            case (6):
-                //Friday
-                dayOfWeekHome = "F";
-                break;
-
-            case (7):
-                //Saturday
-                dayOfWeekHome = "SA";
-                break;
-        }
 
         // Setting adapter for RecyclerView
         myLayoutManager = new LinearLayoutManager(context);
@@ -121,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
 
         myAdapter = new NewHomeAdapter(myHabits);
         homeHabits.setAdapter(myAdapter);
+
 
         // Clearing the Habit list and pulling data from DB
         myHabits.clear();
@@ -151,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private class GetHabits extends AsyncTask<Void, Void, Void>{
+    private class GetHabits extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... params) {
@@ -159,7 +183,8 @@ public class MainActivity extends AppCompatActivity {
             HabitDatabase dbSingleton = HabitDatabase.getInstance(getApplicationContext());
             SQLiteDatabase db = dbSingleton.getReadableDatabase();
 
-            Cursor cursor = db.rawQuery("select * from HABITS where " + dayOfWeekHome + " = 'Y'",
+            // Active habits have non-negative "streak"
+            Cursor cursor = db.rawQuery("select * from HABITS where STREAK<>-1",
                     null);
             cursor.moveToFirst();
 
@@ -170,6 +195,7 @@ public class MainActivity extends AppCompatActivity {
                     idHome = cursor.getInt(0);
                     nameHome = cursor.getString(1);
                     categoryHome = cursor.getString(2);
+                    scheduleHome = cursor.getInt(3);
                     alarmHomeString = cursor.getString(4);
 
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
@@ -180,11 +206,11 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
 
-                    row = new HabitHome(idHome, nameHome, categoryHome, alarmHome);
+                    row = new HabitHome(idHome, nameHome, categoryHome, scheduleHome, alarmHome);
 
                     myHabits.add(row);
 
-                }while (cursor.moveToNext());
+                } while (cursor.moveToNext());
             }
 
             cursor.close();
@@ -196,9 +222,103 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             if (myHabits.isEmpty()) {
                 Log.d("db_habits", "No Goals?");
-            }
+            } else {
 
-            else {
+
+                // Showing only today's habits
+                Calendar now = Calendar.getInstance();
+                dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
+
+                dayOfWeekBinary = 0;
+
+                switch (dayOfWeek) {
+                    case 1:
+                        // Sunday
+                        dayOfWeekBinary = 1;
+                        break;
+
+                    case 2:
+                        // Monday
+                        dayOfWeekBinary = 64;
+                        break;
+
+                    case 3:
+                        // Tuesday
+                        dayOfWeekBinary = 32;
+                        break;
+
+                    case 4:
+                        // Wednesday
+                        dayOfWeekBinary = 16;
+                        break;
+
+                    case 5:
+                        // Thursday
+                        dayOfWeekBinary = 8;
+                        break;
+
+                    case 6:
+                        // Friday
+                        dayOfWeekBinary = 4;
+                        break;
+
+                    case 7:
+                        // Saturday
+                        dayOfWeekBinary = 2;
+                        break;
+                }
+
+                nextDayOfWeekBinary = dayOfWeekBinary >> 1;
+
+                // Remove habits which are not today (after end_time) and tomorrow (before end_time)
+                for (int i=0; i<myHabits.size(); i++){
+
+                    Calendar habitAlarmTime;
+                    habitAlarmTime = myHabits.get(i).getHomeAlarmTime();
+                    int habitAlarmTimeInt = habitAlarmTime.get(Calendar.HOUR_OF_DAY)*60 +
+                            habitAlarmTime.get(Calendar.MINUTE);
+
+                    if (((dayOfWeekBinary & scheduleHome) !=0) && (dayEndTimeInt <=
+                            habitAlarmTimeInt)) {
+
+                        // keep it
+                    }
+                    else {
+
+                        if (((nextDayOfWeekBinary & scheduleHome) !=0) && (dayEndTimeInt >
+                                habitAlarmTimeInt)) {
+
+                            // keep it
+                        }
+
+                        else {
+
+                            // remove it
+                            myHabits.remove(i);
+
+                        }
+                    }
+
+                }
+
+
+                // Sorting the Habit ArrayList according to time
+                Collections.sort(myHabits, new Comparator<HabitHome>() {
+                    @Override
+                    public int compare(HabitHome lhs, HabitHome rhs) {
+
+                        Calendar habitAlarmLHS = lhs.getHomeAlarmTime();
+                        int habitAlarmLHSInt = habitAlarmLHS.get(Calendar.HOUR_OF_DAY)*60 +
+                                habitAlarmLHS.get(Calendar.MINUTE);
+
+                        Calendar habitAlarmRHS = rhs.getHomeAlarmTime();
+                        int habitAlarmRHSInt = habitAlarmRHS.get(Calendar.HOUR_OF_DAY)*60 +
+                                habitAlarmRHS.get(Calendar.MINUTE);
+
+                        return habitAlarmLHSInt - habitAlarmRHSInt;
+                    }
+                });
+
 
                 myAdapter.notifyDataSetChanged();
 
@@ -229,15 +349,15 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public boolean onMove(RecyclerView recyclerView,
-                                       RecyclerView.ViewHolder viewHolder, RecyclerView
-                                               .ViewHolder target){
+                                          RecyclerView.ViewHolder viewHolder, RecyclerView
+                                                                      .ViewHolder target) {
                         return false;
                     }
 
                     @Override
                     public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView
                             .ViewHolder viewHolder, float dX, float dY, int actionState, boolean
-                                                    isCurrentlyActive){
+                                                    isCurrentlyActive) {
                         if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
                             // Get RecyclerView item from the ViewHolder
                             View itemView = viewHolder.itemView;
@@ -246,7 +366,7 @@ public class MainActivity extends AppCompatActivity {
                             if (dX > 0) {
 
                                 // Set green color for L2R swipe
-                                p.setARGB(255,85,139,47);
+                                p.setARGB(255, 85, 139, 47);
                                 // Draw Rect with varying right side, equal to displacement dX
                                 c.drawRect((float) itemView.getLeft(), (float) itemView.getTop(), dX,
                                         (float) itemView.getBottom(), p);
@@ -269,7 +389,7 @@ public class MainActivity extends AppCompatActivity {
 
                 itemTouchHelper.attachToRecyclerView(homeHabits);
 
-                myAdapter.setOnItemClickListener(new NewHomeAdapter.ClickListener(){
+                myAdapter.setOnItemClickListener(new NewHomeAdapter.ClickListener() {
 
                     @Override
                     public void onItemClick(int position, View v) {
@@ -282,10 +402,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Swiped Left to Right
-    public void markAsDone(final HabitHome swipedHabit, final int adapterPosition){
+    public void markAsDone(final HabitHome swipedHabit, final int adapterPosition) {
 
         // Update DB to mark it as Done
-        showSnackBar("Done", swipedHabit, adapterPosition);
+        showSnackBar("Marked as Done", swipedHabit, adapterPosition);
 
     }
 
@@ -295,14 +415,40 @@ public class MainActivity extends AppCompatActivity {
         // show snooze options
         AlertDialog.Builder skipAlertBuilder = new AlertDialog.Builder(this);
         LayoutInflater layoutInflater = this.getLayoutInflater();
+        View radioGroupView = layoutInflater.inflate(R.layout.snooze_dialog, null);
+        snoozeRadioGroup = (RadioGroup) radioGroupView.findViewById(R.id.radio_group);
+        snoozeHours = (EditText) radioGroupView.findViewById(R.id.radio_edittext);
 
         skipAlertBuilder.setTitle("Remind me...");
-        skipAlertBuilder.setView(layoutInflater.inflate(R.layout.snooze_dialog, null))
+        skipAlertBuilder.setView(radioGroupView)
                 .setPositiveButton("OKAY", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        // something
-                        showSnackBar("Snooze", swipedHabit, adapterPosition);
+
+                        // Pass RadioGroup selection
+                        int checkedRadioButton = snoozeRadioGroup.getCheckedRadioButtonId();
+                        int checkedIndex = snoozeRadioGroup.indexOfChild(snoozeRadioGroup
+                                .findViewById(checkedRadioButton));
+                        Log.d("radiogroup_selection", String.valueOf(checkedIndex));
+
+                        // Show Snackbar
+                        switch (checkedIndex) {
+                            case 0:
+                                showSnackBar("Snoozed for " + snoozeHours.getText()
+                                                .toString() + "hours", swipedHabit,
+                                        adapterPosition);
+                                break;
+
+                            case 1:
+                                showSnackBar("Snoozed for tomorrow", swipedHabit, adapterPosition);
+                                break;
+
+                            case 2:
+                                showSnackBar("Skipped for today", swipedHabit, adapterPosition);
+                                break;
+
+                        }
+                        showSnackBar("Snoozed", swipedHabit, adapterPosition);
                     }
                 })
                 .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
@@ -320,10 +466,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public void showSnackBar(String action, final HabitHome swipedHabit, final int adapterPosition) {
 
-    public void showSnackBar(String action, final HabitHome swipedHabit, final int adapterPosition){
-
-        Snackbar sbDone = Snackbar.make(homeHabits, "Snoozed", Snackbar.LENGTH_LONG)
+        Snackbar sbDone = Snackbar.make(homeHabits, action, Snackbar.LENGTH_LONG)
                 .setAction("UNDO", new View.OnClickListener() {
 
                     @Override
@@ -335,6 +480,38 @@ public class MainActivity extends AppCompatActivity {
                 });
         sbDone.show();
 
+        // DB operation
+//        new SaveToDB().execute(new String[] {action});
+
     }
+
+//    private class SaveToDB extends AsyncTask<String, Void, Void> {
+//
+//
+//        @Override
+//        protected Void doInBackground(String... dbAction) {
+//
+//            HabitDatabase dbSingleton = HabitDatabase.getInstance(getApplicationContext());
+//            SQLiteDatabase db = dbSingleton.getWritableDatabase();
+//
+//            ContentValues cv = new ContentValues();
+//
+//            switch(dbAction[0]){
+//
+//                case "Marked as Done":
+//                    //
+//
+//
+//                    break;
+//
+//
+//            }
+//
+//            db.update();
+//            db.close();
+//
+//            return null;
+//        }
+//    }
 
 }
