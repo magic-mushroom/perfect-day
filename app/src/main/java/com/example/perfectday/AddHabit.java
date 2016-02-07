@@ -30,9 +30,10 @@ import java.util.Calendar;
 public class AddHabit extends AppCompatActivity {
 
     Spinner category;
-    String category_value;
+    String category_value, alarmTimeText, alarmTimeTextFull;
     TextView alarmTime, addError;
     SimpleDateFormat sdf = new SimpleDateFormat("hh:mm aa");
+    SimpleDateFormat sdfDB = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
     Calendar cal, calAlarm;
     ToggleButton mon, tue, wed, thu, fri, sat, sun;
     Button addButton;
@@ -98,7 +99,9 @@ public class AddHabit extends AppCompatActivity {
         // Showing current time and timepickerdialog
         alarmTime = (TextView) findViewById(R.id.add_time);
         cal = Calendar.getInstance();
-        alarmTime.setText(sdf.format(cal.getTime()));
+        alarmTimeText = sdf.format(cal.getTime());
+        alarmTimeTextFull = sdfDB.format(cal.getTime());
+        alarmTime.setText(alarmTimeText);
 
         alarmTime.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -141,65 +144,79 @@ public class AddHabit extends AppCompatActivity {
 
                     if (mon.isChecked()) {
                         schedule += 64;
-                        addDays[0] = "Y";
+                        addDays[0] = alarmTimeTextFull;
                     }
                     else {
                         addDays[0] = "N";
                     }
 
+                    Log.d("debug_monday", addDays[0]);
+
                     if (tue.isChecked()) {
                         schedule += 32;
-                        addDays[1] = "Y";
+                        addDays[1] = alarmTimeTextFull;
                     }
                     else {
                         addDays[1] = "N";
                     }
 
+                    Log.d("debug_tuesday", addDays[1]);
+
                     if (wed.isChecked()) {
                         schedule += 16;
-                        addDays[2] = "Y";
+                        addDays[2] = alarmTimeTextFull;
                     }
                     else {
                         addDays[2] = "N";
                     }
 
+                    Log.d("debug_wednesday", addDays[2]);
+
                     if (thu.isChecked()) {
                         schedule += 8;
-                        addDays[3] = "Y";
+                        addDays[3] = alarmTimeTextFull;
                     }
                     else {
                         addDays[3] = "N";
                     }
 
+                    Log.d("debug_thursday", addDays[3]);
+
                     if (fri.isChecked()) {
                         schedule += 4;
-                        addDays[4] = "Y";
+                        addDays[4] = alarmTimeTextFull;
                     }
                     else {
                         addDays[4] = "N";
                     }
 
+                    Log.d("debug_friday", addDays[4]);
+
                     if (sat.isChecked()) {
                         schedule += 2;
-                        addDays[5] = "Y";
+                        addDays[5] = alarmTimeTextFull;
                     }
                     else {
                         addDays[5] = "N";
                     }
 
+                    Log.d("debug_saturday", addDays[5]);
+
                     if (sun.isChecked()) {
                         schedule += 1;
-                        addDays[6] = "Y";
+                        addDays[6] = alarmTimeTextFull;
                     }
                     else {
                         addDays[6] = "N";
                     }
 
+                    Log.d("debug_sunday", addDays[6]);
+
 
                     newHabit = new Habit(0, addHabit.getText().toString(), category_value, schedule,
                             cal, cal, 0, 0, addDays);
 
-                    Log.d("AddHabit_dbInsert", cal.toString());
+                    Log.d("AddHabit_dbInsert", sdfDB.format(cal.getTime()));
 
                     setAlarm();
 
@@ -264,6 +281,8 @@ public class AddHabit extends AppCompatActivity {
 
             alarmTime.setText(sdf.format(newCal.getTime()));
             cal = newCal;
+            alarmTimeText = sdf.format(cal.getTime());
+            alarmTimeTextFull = sdfDB.format(cal.getTime());
 
             Log.d("AddHabit_newCal", cal.toString());
 
@@ -279,8 +298,24 @@ public class AddHabit extends AppCompatActivity {
         dayOfWeekAdd = now.get(Calendar.DAY_OF_WEEK);
 
         int dayOfWeekAddBinary = 0;
+        int i;
 
-        int i = 0;
+        // If time for alarm has already passed, start from next day
+        if (cal.compareTo(now)<=0) {
+
+            i = 1;
+            dayOfWeekAdd +=1;
+
+            // Sunday comes after Saturday
+            if (dayOfWeekAdd == 8){
+                dayOfWeekAdd = 1;
+            }
+        }
+        else {
+            i = 0;
+        }
+
+
 
         // 1 = Sun, 2 = Mon
         // schedule = MTWTFSS
@@ -349,13 +384,13 @@ public class AddHabit extends AppCompatActivity {
 //        }
 
         // Only for Debug
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
-        Log.d("bitwise_test", dateFormat.format(calAlarm.getTime()));
+        Log.d("bitwise_test", sdfDB.format(calAlarm.getTime()));
 
 
         // Save to DB
 
         newHabit.setNextAlarm(calAlarm);
+
 
         new GetLatestGoalId().execute();
 
@@ -392,9 +427,8 @@ public class AddHabit extends AppCompatActivity {
             cv.put("SU", daysStatus[6]);
 
             // Putting Calendar dates
-            SimpleDateFormat dateFormatDB = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
-            String dbTime = dateFormatDB.format(habitToAdd[0].getAlarmTime().getTime());
-            String dbNextAlarm = dateFormatDB.format(habitToAdd[0].getNextAlarm().getTime());
+            String dbTime = sdfDB.format(habitToAdd[0].getAlarmTime().getTime());
+            String dbNextAlarm = sdfDB.format(habitToAdd[0].getNextAlarm().getTime());
 
 
             cv.put("ALARMTIME", dbTime);

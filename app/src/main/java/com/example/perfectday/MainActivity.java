@@ -1,8 +1,6 @@
 package com.example.perfectday;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,7 +9,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -23,21 +20,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.RadioGroup;
 import android.widget.Toast;
-
-
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -45,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -69,6 +55,12 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences sharedPref;
     Calendar dayEndTime;
     int dayEndTimeInt;
+
+    // To get the day's field
+    String doWStatusString;
+    int doWInt, doWInt1;
+    Calendar doWStatus;
+    Boolean isDay;
 
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
 
@@ -117,6 +109,8 @@ public class MainActivity extends AppCompatActivity {
 
         dayEndTimeInt = dayEndTime.get(Calendar.HOUR_OF_DAY)*60 + dayEndTime.get(Calendar.MINUTE);
 
+        Log.d("debug_dayendtime", String.valueOf(dayEndTimeInt));
+
 
         // Button for adding new task
         btn = (Button) findViewById(R.id.sample_button);
@@ -144,6 +138,49 @@ public class MainActivity extends AppCompatActivity {
 
         myAdapter = new NewHomeAdapter(myHabits);
         homeHabits.setAdapter(myAdapter);
+
+        // Getting today's date
+        Calendar now = Calendar.getInstance();
+        dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
+
+        //M (=8), T, W, TH, F, SA, SU
+
+        doWInt = dayOfWeek+6;
+
+
+        // If before dayEndTime, get the day and previous day's status
+        if ((now.get(Calendar.HOUR_OF_DAY)*60 + now.get(Calendar.MINUTE))<dayEndTimeInt) {
+
+            doWInt1 = doWInt - 1;
+            isDay = false;
+        }
+        else {
+
+            // get day and next day's status
+            doWInt1 = doWInt + 1;
+            isDay = true;
+
+        }
+
+        // Adjusting to the correct range of 8-14
+        if (doWInt < 8) {
+            doWInt += 7;
+        }
+        else if (doWInt > 14) {
+            doWInt -= 7;
+        }
+
+        if (doWInt1 < 8) {
+            doWInt1 += 7;
+        }
+        else if (doWInt1 > 14) {
+            doWInt1 -= 7;
+        }
+
+
+
+        Log.d("debug_dow", String.valueOf(doWInt));
+        Log.d("debug_dow1", String.valueOf(doWInt1));
 
 
         // Clearing the Habit list and pulling data from DB
@@ -191,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
             if (cursor.moveToFirst()) {
                 do {
 
+                    boolean toAdd;
                     HabitHome row;
                     idHome = cursor.getInt(0);
                     nameHome = cursor.getString(1);
@@ -198,7 +236,6 @@ public class MainActivity extends AppCompatActivity {
                     scheduleHome = cursor.getInt(3);
                     alarmHomeString = cursor.getString(4);
 
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
                     alarmHome = Calendar.getInstance();
                     try {
                         alarmHome.setTime(sdf.parse(alarmHomeString));
@@ -206,9 +243,122 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
 
-                    row = new HabitHome(idHome, nameHome, categoryHome, scheduleHome, alarmHome);
+                    doWStatusString = cursor.getString(doWInt);
 
-                    myHabits.add(row);
+                    switch(doWStatusString){
+
+                        case "Done":
+                            toAdd = false;
+                            break;
+
+                        case "Skipped":
+                            toAdd = false;
+                            break;
+
+                        case "N":
+                            toAdd = false;
+                            break;
+
+                        default:
+
+                            // Get activity time
+                            doWStatus = Calendar.getInstance();
+                            try {
+                                doWStatus.setTime(sdf.parse(doWStatusString));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+
+                            // See if it is for today
+                            if ((!isDay) && ((doWStatus.get(Calendar.HOUR_OF_DAY)*60 +
+                                    doWStatus.get(Calendar
+                                            .MINUTE)) < dayEndTimeInt))  {
+
+                                toAdd = true;
+
+                            }
+                            else if ((isDay) && ((doWStatus.get(Calendar.HOUR_OF_DAY)*60 +
+                                    doWStatus.get(Calendar
+                                            .MINUTE)) >= dayEndTimeInt)) {
+
+                                toAdd = true;
+
+                            }
+                            else {
+
+                                toAdd = false;
+                            }
+
+                            break;
+
+                    }
+
+                    // If did not get habit for today, try for tomorrow/yesterday
+                    if (!toAdd) {
+
+                        doWStatusString = cursor.getString(doWInt1);
+
+                        switch(doWStatusString){
+
+                            case "Done":
+                                toAdd = false;
+                                break;
+
+                            case "Skipped":
+                                toAdd = false;
+                                break;
+
+                            case "N":
+                                toAdd = false;
+                                break;
+
+                            default:
+
+                                // Get activity time
+                                doWStatus = Calendar.getInstance();
+                                try {
+                                    doWStatus.setTime(sdf.parse(doWStatusString));
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                }
+
+                                // See if it is for today
+                                if ((!isDay) && ((doWStatus.get(Calendar.HOUR_OF_DAY)*60 +
+                                        doWStatus.get(Calendar
+                                                .MINUTE)) >= dayEndTimeInt))  {
+
+                                    toAdd = true;
+
+                                }
+                                else if ((isDay) && ((doWStatus.get(Calendar.HOUR_OF_DAY)*60 +
+                                        doWStatus.get(Calendar
+                                                .MINUTE)) < dayEndTimeInt)) {
+
+                                    toAdd = true;
+
+                                }
+                                else {
+
+                                    toAdd = false;
+                                }
+
+                                break;
+                        }
+                    }
+
+                    // Only add if toAdd is TRUE
+                    if (toAdd) {
+                        row = new HabitHome(idHome, nameHome, categoryHome, scheduleHome,
+                                alarmHome, doWStatus);
+                        myHabits.add(row);
+
+                        Log.d("debug_added", nameHome + " , " + String.valueOf(doWStatus.get(Calendar.HOUR_OF_DAY)*60 +
+                                doWStatus.get(Calendar.MINUTE))  +
+                                "," + String.valueOf(alarmHome.get(Calendar.HOUR_OF_DAY)*60 +
+                                alarmHome.get(Calendar.MINUTE)));
+
+                    }
+
 
                 } while (cursor.moveToNext());
             }
@@ -226,80 +376,80 @@ public class MainActivity extends AppCompatActivity {
 
 
                 // Showing only today's habits
-                Calendar now = Calendar.getInstance();
-                dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
-
-                dayOfWeekBinary = 0;
-
-                switch (dayOfWeek) {
-                    case 1:
-                        // Sunday
-                        dayOfWeekBinary = 1;
-                        break;
-
-                    case 2:
-                        // Monday
-                        dayOfWeekBinary = 64;
-                        break;
-
-                    case 3:
-                        // Tuesday
-                        dayOfWeekBinary = 32;
-                        break;
-
-                    case 4:
-                        // Wednesday
-                        dayOfWeekBinary = 16;
-                        break;
-
-                    case 5:
-                        // Thursday
-                        dayOfWeekBinary = 8;
-                        break;
-
-                    case 6:
-                        // Friday
-                        dayOfWeekBinary = 4;
-                        break;
-
-                    case 7:
-                        // Saturday
-                        dayOfWeekBinary = 2;
-                        break;
-                }
-
-                nextDayOfWeekBinary = dayOfWeekBinary >> 1;
-
-                // Remove habits which are not today (after end_time) and tomorrow (before end_time)
-                for (int i=0; i<myHabits.size(); i++){
-
-                    Calendar habitAlarmTime;
-                    habitAlarmTime = myHabits.get(i).getHomeAlarmTime();
-                    int habitAlarmTimeInt = habitAlarmTime.get(Calendar.HOUR_OF_DAY)*60 +
-                            habitAlarmTime.get(Calendar.MINUTE);
-
-                    if (((dayOfWeekBinary & scheduleHome) !=0) && (dayEndTimeInt <=
-                            habitAlarmTimeInt)) {
-
-                        // keep it
-                    }
-                    else {
-
-                        if (((nextDayOfWeekBinary & scheduleHome) !=0) && (dayEndTimeInt >
-                                habitAlarmTimeInt)) {
-
-                            // keep it
-                        }
-
-                        else {
-
-                            // remove it
-                            myHabits.remove(i);
-
-                        }
-                    }
-
-                }
+//                Calendar now = Calendar.getInstance();
+//                dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
+//
+//                dayOfWeekBinary = 0;
+//
+//                switch (dayOfWeek) {
+//                    case 1:
+//                        // Sunday
+//                        dayOfWeekBinary = 1;
+//                        break;
+//
+//                    case 2:
+//                        // Monday
+//                        dayOfWeekBinary = 64;
+//                        break;
+//
+//                    case 3:
+//                        // Tuesday
+//                        dayOfWeekBinary = 32;
+//                        break;
+//
+//                    case 4:
+//                        // Wednesday
+//                        dayOfWeekBinary = 16;
+//                        break;
+//
+//                    case 5:
+//                        // Thursday
+//                        dayOfWeekBinary = 8;
+//                        break;
+//
+//                    case 6:
+//                        // Friday
+//                        dayOfWeekBinary = 4;
+//                        break;
+//
+//                    case 7:
+//                        // Saturday
+//                        dayOfWeekBinary = 2;
+//                        break;
+//                }
+//
+//                nextDayOfWeekBinary = dayOfWeekBinary >> 1;
+//
+//                // Remove habits which are not today (after end_time) and tomorrow (before end_time)
+//                for (int i=0; i<myHabits.size(); i++){
+//
+//                    Calendar habitAlarmTime;
+//                    habitAlarmTime = myHabits.get(i).getHomeAlarmTime();
+//                    int habitAlarmTimeInt = habitAlarmTime.get(Calendar.HOUR_OF_DAY)*60 +
+//                            habitAlarmTime.get(Calendar.MINUTE);
+//
+//                    if (((dayOfWeekBinary & scheduleHome) !=0) && (dayEndTimeInt <=
+//                            habitAlarmTimeInt)) {
+//
+//                        // keep it
+//                    }
+//                    else {
+//
+//                        if (((nextDayOfWeekBinary & scheduleHome) !=0) && (dayEndTimeInt >
+//                                habitAlarmTimeInt)) {
+//
+//                            // keep it
+//                        }
+//
+//                        else {
+//
+//                            // remove it
+//                            myHabits.remove(i);
+//
+//                        }
+//                    }
+//
+//                }
 
 
                 // Sorting the Habit ArrayList according to time
@@ -307,13 +457,21 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public int compare(HabitHome lhs, HabitHome rhs) {
 
-                        Calendar habitAlarmLHS = lhs.getHomeAlarmTime();
+                        Calendar habitAlarmLHS = lhs.getHomeDoWStatus();
                         int habitAlarmLHSInt = habitAlarmLHS.get(Calendar.HOUR_OF_DAY)*60 +
                                 habitAlarmLHS.get(Calendar.MINUTE);
 
-                        Calendar habitAlarmRHS = rhs.getHomeAlarmTime();
+                        Calendar habitAlarmRHS = rhs.getHomeDoWStatus();
                         int habitAlarmRHSInt = habitAlarmRHS.get(Calendar.HOUR_OF_DAY)*60 +
                                 habitAlarmRHS.get(Calendar.MINUTE);
+
+                        if (habitAlarmLHSInt < dayEndTimeInt ) {
+                            habitAlarmLHSInt +=1440;
+                        }
+
+                        if (habitAlarmRHSInt < dayEndTimeInt ) {
+                            habitAlarmRHSInt +=1440;
+                        }
 
                         return habitAlarmLHSInt - habitAlarmRHSInt;
                     }

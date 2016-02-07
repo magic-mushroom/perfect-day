@@ -7,17 +7,19 @@ import java.util.Calendar;
  */
 public class HabitHome {
 
-    private Calendar alarmTime;
+    private Calendar alarmTime, doWStatus;
     private String name, category;
     private int id, schedule;
 
-    public HabitHome (int id, String name, String category, int schedule, Calendar alarmTime) {
+    public HabitHome (int id, String name, String category, int schedule, Calendar alarmTime,
+                      Calendar doWStatus) {
 
         this.name = name;
         this.category = category;
         this.alarmTime = alarmTime;
         this.id = id;
         this.schedule = schedule;
+        this.doWStatus = doWStatus;
 
     }
 
@@ -33,12 +35,16 @@ public class HabitHome {
         return alarmTime;
     }
 
-    public int getSchedule() {
+    public int getHomeSchedule() {
         return schedule;
     }
 
     public int getHomeId() {
         return id;
+    }
+
+    public Calendar getHomeDoWStatus() {
+        return doWStatus;
     }
 
 }
