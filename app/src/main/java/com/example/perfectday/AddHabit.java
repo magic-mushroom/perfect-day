@@ -453,6 +453,7 @@ public class AddHabit extends AppCompatActivity {
             Intent iForHome = new Intent(AddHabit.this, MainActivity.class);
             iForHome.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             iForHome.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            iForHome.putExtra("toast", R.string.habit_added);
             startActivity(iForHome);
 
         }

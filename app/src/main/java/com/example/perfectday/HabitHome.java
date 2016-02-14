@@ -2,9 +2,6 @@ package com.example.perfectday;
 
 import java.util.Calendar;
 
-/**
- * Created by Raks on 12/2/2015.
- */
 public class HabitHome {
 
     private Calendar alarmTime, doWStatus;
@@ -45,6 +42,10 @@ public class HabitHome {
 
     public Calendar getHomeDoWStatus() {
         return doWStatus;
+    }
+
+    public void setHomeDoWStatus(Calendar doWStatus) {
+        this.doWStatus = doWStatus;
     }
 
 }

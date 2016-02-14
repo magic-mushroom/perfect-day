@@ -43,7 +43,6 @@
         android:layout_height="wrap_content"
         android:layout_alignTop="@id/radio_group"
         android:layout_toRightOf="@id/radio_group"
-        android:text="1"
         android:textSize="20sp"
         android:layout_marginLeft="-70dp"
         android:layout_marginTop="-8dp"/>
@@ -57,6 +56,16 @@
         android:textSize="20sp"
         android:layout_marginTop="10dp"
         android:layout_marginLeft="5dp"/>
+
+    <TextView
+        android:id="@+id/snooze_error"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/radio_group"
+        android:layout_marginTop="20dp"
+        android:textSize="15sp"
+        android:textColor="@color/error"
+        android:layout_centerHorizontal="true"/>
 
 </RelativeLayout>
 

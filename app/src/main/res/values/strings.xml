@@ -7,9 +7,12 @@
     <string name="choose_category">Choose a category: </string>
     <string name="add_habit">Add a habit</string>
     <string name="remind_me">REMIND ME AT</string>
+    <string name="habit_added">Habit added</string>
 
     <string name="error_noday">Oops, please select at least 1 day</string>
-    <string name="error_nohabit">Okay, you forgot to write what the habit is!</string>
+    <string name="error_nohabit">Hey, you forgot to write what the habit is!</string>
+    <string name="error_snooze">Snooze by fewer hours for today, or select Tomorrow</string>
+    <string name="error2_snooze">Seriously? Stop fooling around! Snooze by atleast an hour</string>
 
     <string name="habit_done">Sure you want to mark this as done?</string>
 
