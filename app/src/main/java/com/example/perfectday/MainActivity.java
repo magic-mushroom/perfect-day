@@ -1,6 +1,7 @@
 package com.example.perfectday;
 
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -63,13 +64,17 @@ public class MainActivity extends AppCompatActivity {
 
     // To get the day's field
     String doWStatusString;
-    int doWInt, doWInt1;
+    int doWInt, doWInt1, DBcol, DBcol2;
     Calendar doWStatus, now;
     Boolean isDay;
 
     // DB Save
     boolean DBop;
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
+
+    // Mapping column index with column name
+    String[] indexToName = {"M", "T", "W", "TH", "F", "SA", "SU"};
+    int[] indexToBinary = {64,32,16,8,4,2,1};
 
 
     @Override
@@ -668,36 +673,96 @@ public class MainActivity extends AppCompatActivity {
 
                 if (DBop) {
 
-                    switch(action) {
+                    Calendar swipedAlarm = swipedHabit.getHomeAlarmTime();
+                    if (isDay & ((swipedAlarm.get(Calendar.HOUR_OF_DAY)*60 + swipedAlarm
+                            .get(Calendar.MINUTE)) >= dayEndTimeInt)) {
 
-                        case "Marked as Done":
+                        DBcol = doWInt;
 
-                            break;
+                        if (action == "Snoozed for tomorrow") {
+                            DBcol2 = doWInt1;
+                        }
+                    }
+                    else if (isDay & ((swipedAlarm.get(Calendar.HOUR_OF_DAY)*60 + swipedAlarm
+                            .get(Calendar.MINUTE)) < dayEndTimeInt)){
 
-                        case "Snoozed for tomorrow":
+                        DBcol = doWInt1;
 
-                            break;
+                        if (action == "Snoozed for tomorrow") {
+                            DBcol2 = doWInt1 + 1;
+                        }
+                    }
+                    else if (!isDay & ((swipedAlarm.get(Calendar.HOUR_OF_DAY)*60 + swipedAlarm
+                            .get(Calendar.MINUTE)) < dayEndTimeInt)) {
 
-                        case "Skipped for today":
+                        DBcol = doWInt;
 
-                            break;
+                        if (action == "Snoozed for tomorrow") {
+                            DBcol2 = doWInt + 1;
+                        }
+                    }
+                    else if (!isDay & ((swipedAlarm.get(Calendar.HOUR_OF_DAY)*60 +
+                            swipedAlarm.get(Calendar.MINUTE)) >= dayEndTimeInt)) {
 
-                        default:
-                            Log.d("string_split", action.split("\\s")[2]);
-                            Log.d("snooze_habit", sdf.format(doWStatus.getTime()));
-                            swipedHabit.setHomeDoWStatus(doWStatus);
+                        DBcol = doWInt1;
 
-                            myHabits.add(swipedHabit);
-                            myHabits = sortHabits(myHabits);
+                        if (action == "Snoozed for tomorrow") {
+                            DBcol2 = doWInt;
+                        }
+                    }
+                    else {
 
-                            Log.d("snooze_habit", sdf.format(myHabits.get(myHabits.indexOf(swipedHabit))
-                                    .getHomeDoWStatus().getTime()));
+                        Log.d("snooze_done", "We have a problem!");
+                    }
 
-                            myAdapter.notifyDataSetChanged();
+                    // Adjusting DBCol2 to the correct range of 8-14
+                    if (DBcol2 > 14) {
+                        DBcol2 -= 7;
+                    }
 
-                            break;
+
+                    if (((action.split("\\s")[0]) == "Snoozed") && (action.split("\\s")[2] !=
+                            "tomorrow")) {
+
+                        Log.d("snooze_habit", sdf.format(doWStatus.getTime()));
+                        swipedHabit.setHomeDoWStatus(doWStatus);
+
+                        myHabits.add(swipedHabit);
+                        myHabits = sortHabits(myHabits);
+
+                        myAdapter.notifyDataSetChanged();
 
                     }
+
+                    new SaveToDB(action, swipedHabit).execute();
+
+//                    switch(action) {
+//
+//                        case "Marked as Done":
+//
+//                            break;
+//
+//                        case "Snoozed for tomorrow":
+//
+//                            break;
+//
+//                        case "Skipped for today":
+//
+//                            break;
+//
+//                        default:
+//                            Log.d("string_split", action.split("\\s")[2]);
+//                            Log.d("snooze_habit", sdf.format(doWStatus.getTime()));
+//                            swipedHabit.setHomeDoWStatus(doWStatus);
+//
+//                            myHabits.add(swipedHabit);
+//                            myHabits = sortHabits(myHabits);
+//
+//                            myAdapter.notifyDataSetChanged();
+//
+//                            break;
+//
+//                    }
 
                 }
 
@@ -711,34 +776,132 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-//    private class SaveToDB extends AsyncTask<String, Void, Void> {
-//
-//
-//        @Override
-//        protected Void doInBackground(String... dbAction) {
-//
-//            HabitDatabase dbSingleton = HabitDatabase.getInstance(getApplicationContext());
-//            SQLiteDatabase db = dbSingleton.getWritableDatabase();
-//
-//            ContentValues cv = new ContentValues();
-//
-//            switch(dbAction[0]){
-//
-//                case "Marked as Done":
-//                    //
-//
-//
-//                    break;
-//
-//
-//            }
-//
-//            db.update();
-//            db.close();
-//
-//            return null;
-//        }
-//    }
+    private class SaveToDB extends AsyncTask<Void, Void, Void> {
+
+        String DBaction;
+        HabitHome DBswipedHabit;
+
+        public SaveToDB(String DBaction,HabitHome DBswipedHabit) {
+
+            super();
+
+            this.DBaction = DBaction;
+            this.DBswipedHabit = DBswipedHabit;
+
+        }
+
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            HabitDatabase dbSingleton = HabitDatabase.getInstance(getApplicationContext());
+            SQLiteDatabase db = dbSingleton.getWritableDatabase();
+
+            ContentValues cv = new ContentValues();
+
+            int originalTime = DBswipedHabit.getHomeAlarmTime().get(Calendar.HOUR_OF_DAY)
+                    *60 + DBswipedHabit.getHomeAlarmTime().get(Calendar.MINUTE);
+            int newTime = DBswipedHabit.getHomeDoWStatus().get(Calendar.HOUR_OF_DAY)*60 +
+                    DBswipedHabit.getHomeDoWStatus().get(Calendar.MINUTE);
+
+            switch(DBaction) {
+
+                case "Marked as Done":
+
+                    cv.put(indexToName[DBcol-8], "Done");
+
+                    if ((originalTime >= dayEndTimeInt) & (newTime < dayEndTimeInt)) {
+
+                        if (isDay) {
+                            DBcol2 = doWInt1;
+                        } else {
+                            DBcol2 = doWInt;
+                        }
+
+                        if ((indexToBinary[DBcol2-8] & DBswipedHabit.getHomeSchedule()) == 0){
+
+                            cv.put(indexToName[DBcol2-8], sdf.format(DBswipedHabit.getHomeAlarmTime()
+                                    .getTime()));
+
+                        }
+                        else {
+
+                            cv.put(indexToName[DBcol2-8], "N");
+
+                        }
+
+                    }
+
+                    break;
+
+                case "Snoozed for tomorrow":
+
+                    cv.put(indexToName[DBcol-8], "Skip");
+                    cv.put(indexToName[DBcol2-8], sdf.format(DBswipedHabit.getHomeAlarmTime()
+                            .getTime()));
+                    break;
+
+                case "Skipped for today":
+
+                    cv.put(indexToName[DBcol-8], "Skip");
+
+                    if ((originalTime >= dayEndTimeInt) & (newTime < dayEndTimeInt)) {
+
+                        if (isDay) {
+                            DBcol2 = doWInt1;
+                        } else {
+                            DBcol2 = doWInt;
+                        }
+
+                        if ((indexToBinary[DBcol2-8] & DBswipedHabit.getHomeSchedule()) == 0){
+
+                            cv.put(indexToName[DBcol2-8], sdf.format(DBswipedHabit.getHomeAlarmTime()
+                                    .getTime()));
+
+                        }
+                        else {
+
+                            cv.put(indexToName[DBcol2-8], "N");
+
+                        }
+
+                    }
+
+                    break;
+
+                default:
+
+                    if ((originalTime >= dayEndTimeInt) & (newTime < dayEndTimeInt)) {
+
+                        if (isDay){
+                            DBcol2 = doWInt1;
+                        }
+                        else {
+                            DBcol2 = doWInt;
+                        }
+
+                        cv.put(indexToName[DBcol-8], "Skipped");
+                        cv.put(indexToName[DBcol2-8], sdf.format(DBswipedHabit.getHomeDoWStatus()
+                                .getTime()));
+
+                        // Add a service with Habit ID to run at DayEndTime to set HomeAlarmTime for
+                        // the day - Cancel it when any other action takes place
+
+                    }
+                    else {
+
+                        cv.put(indexToName[DBcol-8], sdf.format(DBswipedHabit.getHomeDoWStatus()
+                                .getTime()));
+                    }
+
+            }
+
+            db.update("HABITS", cv, "ID = "+ DBswipedHabit.getHomeId(), null);
+
+            db.close();
+
+            return null;
+        }
+    }
 
 
     public ArrayList<HabitHome> sortHabits( ArrayList<HabitHome> myHabitsSorted) {
