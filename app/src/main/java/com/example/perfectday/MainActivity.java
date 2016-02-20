@@ -13,6 +13,7 @@ import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     Calendar alarmHome;
     int idHome, dayOfWeek, dayOfWeekBinary, nextDayOfWeekBinary, scheduleHome;
     Context context;
+    CoordinatorLayout homeLayout;
 
     // Trying out RecyclerView
     RecyclerView homeHabits;
@@ -84,12 +86,15 @@ public class MainActivity extends AppCompatActivity {
 
         context = this;
 
+        homeLayout = (CoordinatorLayout) findViewById(R.id.home_coordinatorLayout);
 
-        // Showing toasts passed as intent extras
-        String toastie = getIntent().getStringExtra("toast");
-        if (toastie!=null){
-            Toast toast = Toast.makeText(this, toastie, Toast.LENGTH_SHORT);
-            toast.show();
+        // Showing snackbars passed as intent extras
+        String snackBarText = getIntent().getStringExtra("toast");
+        if (snackBarText!=null){
+
+            Snackbar sbIntentExtra = Snackbar.make(homeLayout, snackBarText, Snackbar.LENGTH_LONG);
+            sbIntentExtra.show();
+
         }
 
 
@@ -104,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
             Calendar now = Calendar.getInstance();
             now.set(Calendar.HOUR_OF_DAY, 3);
             now.set(Calendar.MINUTE, 0);
+            now.set(Calendar.SECOND, 0);
             editor.putString("end_time", sdf.format(now.getTime()));
 
             editor.commit();
@@ -151,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
 
         myAdapter = new HomeAdapter(myHabits);
         homeHabits.setAdapter(myAdapter);
+
 
         // Getting today's date
         now = Calendar.getInstance();
@@ -403,31 +410,6 @@ public class MainActivity extends AppCompatActivity {
                 // Sorting the Habit ArrayList according to time
                 myHabits = sortHabits(myHabits);
 
-//                Collections.sort(myHabits, new Comparator<HabitHome>() {
-//                    @Override
-//                    public int compare(HabitHome lhs, HabitHome rhs) {
-//
-//                        Calendar habitAlarmLHS = lhs.getHomeDoWStatus();
-//                        int habitAlarmLHSInt = habitAlarmLHS.get(Calendar.HOUR_OF_DAY)*60 +
-//                                habitAlarmLHS.get(Calendar.MINUTE);
-//
-//                        Calendar habitAlarmRHS = rhs.getHomeDoWStatus();
-//                        int habitAlarmRHSInt = habitAlarmRHS.get(Calendar.HOUR_OF_DAY)*60 +
-//                                habitAlarmRHS.get(Calendar.MINUTE);
-//
-//                        if (habitAlarmLHSInt < dayEndTimeInt ) {
-//                            habitAlarmLHSInt +=1440;
-//                        }
-//
-//                        if (habitAlarmRHSInt < dayEndTimeInt ) {
-//                            habitAlarmRHSInt +=1440;
-//                        }
-//
-//                        return habitAlarmLHSInt - habitAlarmRHSInt;
-//                    }
-//                });
-
-
                 myAdapter.notifyDataSetChanged();
 
                 ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
@@ -447,8 +429,8 @@ public class MainActivity extends AppCompatActivity {
                         }
 
 
-                        myHabits.remove(viewHolder.getAdapterPosition());
-                        homeHabits.getAdapter().notifyItemRemoved(viewHolder.getAdapterPosition());
+                        myHabits.remove(adapterPosition);
+                        homeHabits.getAdapter().notifyItemRemoved(adapterPosition);
 
                         // remove from DB as well or show
                         Log.d("Swipe Direction", String.valueOf(swipeDir));
@@ -517,6 +499,7 @@ public class MainActivity extends AppCompatActivity {
         showSnackBar("Marked as Done", doWStatus, swipedHabit, adapterPosition);
 
     }
+
 
     // Swiped Right to Left
     public void markAsSkipped(final HabitHome swipedHabit, final int adapterPosition) {
@@ -605,6 +588,7 @@ public class MainActivity extends AppCompatActivity {
                         if (doWStatus.compareTo(dayEndTime) >= 0) {
 
                             snoozeError.setText(R.string.error_snooze);
+                            doWStatus.add(Calendar.HOUR_OF_DAY, -hrs);
 
                         }
                         else if (hrs==0) {
@@ -652,8 +636,10 @@ public class MainActivity extends AppCompatActivity {
     public void showSnackBar(final String action, final Calendar doWStatus, final HabitHome
             swipedHabit, final int adapterPosition) {
 
+        Log.d("snooze_error", "Showing snackbar");
+
         DBop = true;
-        Snackbar sbDone = Snackbar.make(homeHabits, action, Snackbar.LENGTH_LONG)
+        Snackbar sbDone = Snackbar.make(homeLayout, action, Snackbar.LENGTH_LONG)
                 .setAction("UNDO", new View.OnClickListener() {
 
                     @Override
@@ -721,8 +707,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
 
-                    if (((action.split("\\s")[0]) == "Snoozed") && (action.split("\\s")[2] !=
-                            "tomorrow")) {
+                    if (((action.split("\\s")[0]).equals("Snoozed")) && (!(action.split("\\s")[2]
+                            .equals("tomorrow")))){
 
                         Log.d("snooze_habit", sdf.format(doWStatus.getTime()));
                         swipedHabit.setHomeDoWStatus(doWStatus);
@@ -735,34 +721,6 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     new SaveToDB(action, swipedHabit).execute();
-
-//                    switch(action) {
-//
-//                        case "Marked as Done":
-//
-//                            break;
-//
-//                        case "Snoozed for tomorrow":
-//
-//                            break;
-//
-//                        case "Skipped for today":
-//
-//                            break;
-//
-//                        default:
-//                            Log.d("string_split", action.split("\\s")[2]);
-//                            Log.d("snooze_habit", sdf.format(doWStatus.getTime()));
-//                            swipedHabit.setHomeDoWStatus(doWStatus);
-//
-//                            myHabits.add(swipedHabit);
-//                            myHabits = sortHabits(myHabits);
-//
-//                            myAdapter.notifyDataSetChanged();
-//
-//                            break;
-//
-//                    }
 
                 }
 
@@ -835,14 +793,14 @@ public class MainActivity extends AppCompatActivity {
 
                 case "Snoozed for tomorrow":
 
-                    cv.put(indexToName[DBcol-8], "Skip");
+                    cv.put(indexToName[DBcol-8], "Skipped");
                     cv.put(indexToName[DBcol2-8], sdf.format(DBswipedHabit.getHomeAlarmTime()
                             .getTime()));
                     break;
 
                 case "Skipped for today":
 
-                    cv.put(indexToName[DBcol-8], "Skip");
+                    cv.put(indexToName[DBcol-8], "Skipped");
 
                     if ((originalTime >= dayEndTimeInt) & (newTime < dayEndTimeInt)) {
 
@@ -898,6 +856,8 @@ public class MainActivity extends AppCompatActivity {
             db.update("HABITS", cv, "ID = "+ DBswipedHabit.getHomeId(), null);
 
             db.close();
+
+            Log.d("snooze_save", "Saved to DB");
 
             return null;
         }
