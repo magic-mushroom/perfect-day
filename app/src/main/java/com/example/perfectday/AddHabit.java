@@ -456,14 +456,19 @@ public class AddHabit extends AppCompatActivity {
             Intent iForAlarm = new Intent(AddHabit.this, LocalNotificationReceiver.class);
             iForAlarm.putExtra("ID", newHabit.getId());
             iForAlarm.putExtra("TITLE", newHabit.getName());
+            iForAlarm.putExtra("SCHEDULE", newHabit.getSchedule());
+            iForAlarm.putExtra("ALARMTIME", newHabit.getAlarmTime());
+            iForAlarm.putExtra("NEXTALARM", newHabit.getNextAlarm());
 
             PendingIntent piForAlarm = PendingIntent.getBroadcast(AddHabit.this, newHabit.getId()
                     , iForAlarm, PendingIntent.FLAG_ONE_SHOT);
 
             AlarmManager alarmMgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            alarmMgr.set(AlarmManager.RTC_WAKEUP, newHabit.getNextAlarm().getTimeInMillis(), piForAlarm);
+            alarmMgr.setExact(AlarmManager.RTC_WAKEUP, newHabit.getNextAlarm().getTimeInMillis(),
+                    piForAlarm);
 
-            Log.d("Alarm", "Alarm set for new habit");
+            Log.d("Alarm", "Alarm set for new habit at " + sdfDB.format(newHabit.getNextAlarm()
+                    .getTime()));
 
             // Go Home!
             Intent iForHome = new Intent(AddHabit.this, MainActivity.class);

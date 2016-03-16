@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
     int doWInt, doWInt1, DBcol, DBcol2;
     Calendar doWStatus, now;
     Boolean isDay;
+    int hrs;
 
     // DB Save
     boolean DBop;
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Showing snackbars passed as intent extras
         String snackBarText = getIntent().getStringExtra("toast");
-        if (snackBarText!=null){
+        if (snackBarText != null && !snackBarText.isEmpty()){
 
             Snackbar sbIntentExtra = Snackbar.make(homeLayout, snackBarText, Snackbar.LENGTH_LONG);
             sbIntentExtra.show();
@@ -576,7 +577,7 @@ public class MainActivity extends AppCompatActivity {
                     case 0:
 
                         // Get the updated time
-                        int hrs = Integer.parseInt(snoozeHours.getText().toString());
+                        hrs = Integer.parseInt(snoozeHours.getText().toString());
                         doWStatus.add(Calendar.HOUR_OF_DAY, hrs);
 
                         Log.d("snooze_doWStatus", sdf.format(doWStatus.getTime()));
@@ -644,6 +645,13 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onClick(View v) {
+
+                        if (((action.split("\\s")[0]).equals("Snoozed")) && (!(action.split("\\s")[2]
+                                .equals("tomorrow")))){
+
+                            doWStatus.add(Calendar.HOUR_OF_DAY, -hrs);
+                        }
+
                         myHabits.add(adapterPosition, swipedHabit);
                         myAdapter.notifyDataSetChanged();
                         DBop = false;
